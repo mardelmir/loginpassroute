@@ -31,7 +31,6 @@ const setupAPP = (app) => {
     }));
 }
 
-
 module.exports = {
     validarPalabraMiddleware,
     verificarSesionMiddleware,

@@ -10,15 +10,14 @@ dotenv.config();
 const middlewares = require('./middlewares');
 const routes = require('./routes');
 
-middlewares.setupAPP(app);
-routes.setup(app);
-
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({
     secret: process.env.PALABRA_SECRETA || 'secretoSuperSecreto',
     resave: false,
     saveUninitialized: true,
-  }));
+}));
+
+routes.setup(app);
 
 app.post('/profile', middlewares.validarPalabraMiddleware, (req, res) => {
     res.send(`

@@ -3,11 +3,12 @@ const middlewares = require('./middlewares');
 const setup = (app) => {
     app.get('/', (req, res) => {
         const mensajeError = req.query.error
-            ? (req.query.error === '1' ? 'Palabra incorrecta, inténtalo de nuevo.' : 'No estás logado.')
-            : '';
+        ? (req.query.error === '1' ? 'Palabra incorrecta, inténtalo de nuevo.' : 'No estás logado.')
+        : '';
         if (req.session.palabraSecreta) {
             return res.redirect('/profile');
         }
+        middlewares.setupAPP(app);
         res.send(`
             <html>
                 <body>
