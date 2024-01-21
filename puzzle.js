@@ -1,9 +1,5 @@
 // Snippets de código para poder componer el programa
 
-
-
-// app.js
-
 //Usado?: Sí 
 const express = require('express');
 //--- Explicación: Carga la dependencia express
@@ -41,12 +37,17 @@ dotenv.config();
 
 //Usado?: Sí
 const middlewares = require('./middlewares');
-//--- Explicación: Importa middleware a app.js
+//--- Explicación: Importa las funciones de middleware
 // -------------------------------------------------------------------------------------
 
 //Usado?: Sí
 const routes = require('./routes');
-//--- Explicación: Importa routes a app.js
+//--- Explicación: Importa la función de routes.js
+// -------------------------------------------------------------------------------------
+
+//Usado?: Sí
+middlewares.setupAPP(app);
+//--- Explicación: Errata setupApp() --> setupAPP(). Accede a la función setupAPP de middlewares.js.
 // -------------------------------------------------------------------------------------
 
 //Usado?: Sí
@@ -55,15 +56,17 @@ routes.setup(app);
 // -------------------------------------------------------------------------------------
 
 //Usado?: Sí
-app.get('/profile', middlewares.verificarSesionMiddleware, (req, res) => {
-  res.send(`
-    <h1>Ruta del Perfil (Sesión activa)</h1>
-    <form method="post" action="/logout">
-      <button type="submit">Log Out</button>
-    </form>
-  `);
-});
-//--- Explicación: Hace una petición get desde /profile al servidor y usa el middleware para verificar si hay una sesión iniciada. Si la encuentra, devuelve el res.send('...') indicado.
+app.use(bodyParser.urlencoded({ extended: true }));
+//--- Explicación: Recoge información de la URL (.urlencoded) y la parsea (bodyParser), haciéndola accesible desde req.body. En este caso se utiliza para recoger la información del input, que queda identificado con name="palabra" (accede mediante req.body.palabra)
+// -------------------------------------------------------------------------------------
+
+//Usado?: Sí
+app.use(session({
+  secret: process.env.PALABRA_SECRETA || 'secretoSuperSecreto',
+  resave: false,
+  saveUninitialized: true,
+}));
+//--- Explicación: Crea una sesión y usa el secret para firmar el ID de la coockie que genera y envía al servidor
 // -------------------------------------------------------------------------------------
 
 //Usado?: Sí
@@ -75,7 +78,7 @@ app.listen(PORT, () => {
 
 
 
-// middlewares.js
+
 
 //Usado?: Sí
 const bodyParser = require('body-parser');
@@ -131,7 +134,7 @@ const setupAPP = (app) => {
     saveUninitialized: true,
   }));
 };
-//--- Explicación:
+//--- Explicación: Función que recoge información de la URL (.urlencoded) y la parsea (bodyParser), haciéndola accesible desde req.body. Además crea una sesión y usa el secret para firmar el ID de la coockie que genera y envía al servidor.
 // -------------------------------------------------------------------------------------
 
 //Usado?: Sí
@@ -145,11 +148,11 @@ module.exports = {
 
 
 
-// routes.js
+
 
 //Usado?: Sí
 const middlewares = require('./middlewares');
-//--- Explicación: Importa middlewares.js para usarlo en routes.js
+//--- Explicación: Importa las funciones de middlewares.js
 // -------------------------------------------------------------------------------------
 
 //Usado?: Sí
@@ -164,7 +167,7 @@ const setup = (app) => {
     //Aquí va código dentro
   })
 }
-//--- Explicación: Hace una petición get de la página de inicio. Como se usa también como endpoint de varias redirecciones, incluye ternarios e if para mostrar los errores 1 y 2 de middleware.js y comprueba si hay una sesión iniciada.
+//--- Explicación: Hace una petición get de la página de inicio. Como '/' se usa también como punto final de varias redirecciones, incluye ternarios e if para mostrar los errores 1 y 2 de middleware.js y comprueba si hay una sesión iniciada.
 // -------------------------------------------------------------------------------------
 
 //Usado?: Sí
@@ -181,23 +184,8 @@ res.send(`
     </body>
   </html>
 `);
-//--- Explicación: Esta es la página de inicio que aparece nada más iniciar el servidor (porque hace un res.send('...')) y a esta página redirigen los errores 1 y 2 de las funciones de middleware.js 
+//--- Explicación: Esta es la página de inicio que aparece en el navegador nada más iniciar el servidor (res.send('...')) y a esta página redirigen los errores 1 y 2 de las funciones de middleware.js 
 // -------------------------------------------------------------------------------------
-
-//Usado?: Sí
-module.exports = {
-  setup,
-};
-//--- Explicación: Exporta setup para usarlo en app.js
-// -------------------------------------------------------------------------------------
-
-
-
-
-
-
-
-// SIN EXPLICAR
 
 //Usado?: Sí
 app.post('/profile', middlewares.validarPalabraMiddleware, (req, res) => {
@@ -208,14 +196,20 @@ app.post('/profile', middlewares.validarPalabraMiddleware, (req, res) => {
     </form>
   `);
 });
-//--- Explicación: 
+//--- Explicación: Hace una petición post que le indica al servidor que si pasa el middleware de validación de palabra (toda esta información no es visible en la URL) devuelva el contenido de res.send('...')
 // -------------------------------------------------------------------------------------
 
 //Usado?: Sí
-middlewares.setupAPP(app);
-//--- Explicación: Errata setupApp() --> setupAPP(). Accede a la función setupAPP de middlewares.js. Esta función hace falta aquí porque 
+app.get('/profile', middlewares.verificarSesionMiddleware, (req, res) => {
+  res.send(`
+    <h1>Ruta del Perfil (Sesión activa)</h1>
+    <form method="post" action="/logout">
+      <button type="submit">Log Out</button>
+    </form>
+  `);
+});
+//--- Explicación: Hace una petición get de /profile y usa el middleware para verificar si hay una sesión iniciada. Si la encuentra, devuelve el res.send('...') indicado.
 // -------------------------------------------------------------------------------------
-
 
 //Usado?: Sí
 app.post('/logout', (req, res) => {
@@ -226,19 +220,13 @@ app.post('/logout', (req, res) => {
     res.redirect('/');
   });
 });
-//--- Explicación: 
+//--- Explicación: Hace una petición post que le indica al servidor que destruya la sesión. Si hay algún fallo mostrará por consola el error y sino redirige a la página de inicio '/'
 // -------------------------------------------------------------------------------------
 
-//Usado?: Sí
-app.use(bodyParser.urlencoded({ extended: true }));
-//--- Explicación: Parsea el body de la petición que se haga
-// -------------------------------------------------------------------------------------
 
 //Usado?: Sí
-app.use(session({
-  secret: process.env.PALABRA_SECRETA || 'secretoSuperSecreto',
-  resave: false,
-  saveUninitialized: true,
-}));
-//--- Explicación: 
+module.exports = {
+  setup,
+};
+//--- Explicación: Exporta setup para usarlo en app.js
 // -------------------------------------------------------------------------------------

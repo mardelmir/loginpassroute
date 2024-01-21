@@ -3,12 +3,11 @@ const middlewares = require('./middlewares');
 const setup = (app) => {
     app.get('/', (req, res) => {
         const mensajeError = req.query.error
-        ? (req.query.error === '1' ? 'Palabra incorrecta, inténtalo de nuevo.' : 'No estás logado.')
-        : '';
+            ? (req.query.error === '1' ? 'Palabra incorrecta, inténtalo de nuevo.' : 'No estás logado.')
+            : '';
         if (req.session.palabraSecreta) {
             return res.redirect('/profile');
         }
-        middlewares.setupAPP(app);
         res.send(`
             <html>
                 <body>
@@ -22,6 +21,33 @@ const setup = (app) => {
                 </body>
             </html>`);
     })
+
+    app.post('/profile', middlewares.validarPalabraMiddleware, (req, res) => {
+        res.send(`
+          <h1>Ruta del Perfil</h1>
+          <form method="post" action="/logout">
+            <button type="submit">Log Out</button>
+          </form>
+        `);
+    });
+
+    app.get('/profile', middlewares.verificarSesionMiddleware, (req, res) => {
+        res.send(`
+          <h1>Ruta del Perfil (Sesión activa)</h1>
+          <form method="post" action="/logout">
+            <button type="submit">Log Out</button>
+          </form>
+        `);
+    });
+
+    app.post('/logout', (req, res) => {
+        req.session.destroy((err) => {
+            if (err) {
+                console.error('Error al cerrar sesión:', err);
+            }
+            res.redirect('/');
+        });
+    });
 }
 
 
